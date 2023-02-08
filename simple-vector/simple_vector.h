@@ -115,6 +115,9 @@ public:
 // Если перед вставкой значения вектор был заполнен полностью,
 // вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, Type &&value) {
+		if (pos < cbegin() || pos > cend()) {
+			throw std::out_of_range(""); // исключение или что-то другое?
+		}
 		if (IsEmpty()) {
 			PushBack(std::move(value));
 			return begin();
@@ -130,6 +133,9 @@ public:
 	}
 
 	Iterator Insert(ConstIterator pos, const Type &value) {
+		if (pos < cbegin() || pos > cend()) {
+			throw std::out_of_range(""); // исключение или что-то другое?
+		}
 		if (IsEmpty()) {
 			PushBack(value);
 			return begin();
@@ -146,6 +152,7 @@ public:
 
 // "Удаляет" последний элемент вектора. Вектор не должен быть пустым
 	void PopBack() noexcept {
+		assert(size_ != 0);
 		if (size_ != 0) {
 			--size_;
 		}
@@ -153,6 +160,10 @@ public:
 
 // Удаляет элемент вектора в указанной позиции
 	Iterator Erase(ConstIterator pos) {
+		assert(size_ != 0);
+		if (pos < cbegin() || pos > cend()) {
+			throw std::out_of_range(""); // исключение или что-то другое?
+		}
 		size_t index = std::distance(cbegin(), pos);
 		std::copy(pos + 1, cend(), begin() + index);
 		--size_;
@@ -160,6 +171,10 @@ public:
 	}
 
 	Iterator Erase(Iterator &&pos) {
+		assert(size_ != 0);
+		if (pos < cbegin() || pos > cend()) {
+			throw std::out_of_range(""); // исключение или что-то другое?
+		}
 		size_t index = std::distance(begin(), pos);
 		std::move(pos + 1, end(), begin() + index);
 		--size_;
@@ -187,14 +202,16 @@ public:
 		return size_ == 0;
 	}
 
-// Возвращает ссылку на элемент с индексом index
 	Type& operator[](size_t index) noexcept {
-		return array_[index];
+		if (index < size_) {
+			return array_[index];
+		} // else ... а что тогда возвращать здесь?
 	}
 
-// Возвращает константную ссылку на элемент с индексом index
 	const Type& operator[](size_t index) const noexcept {
-		return array_[index];
+		if (index < size_) {
+			return array_[index];
+		} // else ... а что тогда возвращать здесь?
 	}
 
 // Возвращает константную ссылку на элемент с индексом index
@@ -226,7 +243,9 @@ public:
 		if (new_size <= size_) {
 			size_ = new_size;
 		} else if (new_size <= capacity_) {
-			std::generate(begin() + size_, begin() + new_size, []() {return Type{};});
+			std::generate(begin() + size_, begin() + new_size, []() {
+				return Type { };
+			});
 			size_ = new_size;
 		} else {
 			size_t size_max = std::max(new_size, capacity_ * 2);
@@ -240,7 +259,7 @@ public:
 			ArrayPtr<Type> new_array(new_capacity);
 			std::copy(begin(), end(), new_array.Get());
 			array_.swap(new_array);
-            std::fill(end(), begin() + new_capacity, Type{});
+			std::fill(end(), begin() + new_capacity, Type { });
 			capacity_ = new_capacity;
 		}
 	}
@@ -250,7 +269,9 @@ public:
 			ArrayPtr<Type> new_array(new_capacity);
 			std::move(begin(), end(), new_array.Get());
 			array_.swap(new_array);
-			std::generate(end(), begin() + new_capacity, []() {return Type{};});
+			std::generate(end(), begin() + new_capacity, []() {
+				return Type { };
+			});
 			capacity_ = new_capacity;
 		}
 	}
@@ -324,4 +345,5 @@ template<typename Type>
 inline bool operator>=(const SimpleVector<Type> &lhs, const SimpleVector<Type> &rhs) {
 	return !(lhs < rhs);
 }
+
 
